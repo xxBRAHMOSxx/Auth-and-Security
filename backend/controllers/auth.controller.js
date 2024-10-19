@@ -1,7 +1,10 @@
 import { User } from '../models/user.model.js'
+
 import bcryptjs from 'bcryptjs'
+import crypto from 'crypto'
+
 import { generateTokenAndSetCookie } from '../utils/generateTokenAndSetCookie.js'
-import { sendVerificationEmail, sendWelcomeEmail } from '../mailtrap/emails.js'
+import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from '../mailtrap/emails.js'
 
 
 export const getUser = async (req, res) => {
@@ -50,7 +53,7 @@ export const signup = async (req, res) => {
             message: "User created successfully",
             user: {
                 ...user._doc,
-                password: null
+                password: undefined
 
             }
         })
@@ -62,33 +65,99 @@ export const signup = async (req, res) => {
 }
 
 export const verifyUser = async (req, res) => {
-    const {code} = req.body
+    const { code } = req.body
 
     try {
         const user = await User.findOne({
-            verificationToken:code,
-            verificationTokenExpiresAt:{$gt:Date.now()}
+            verificationToken: code,
+            verificationTokenExpiresAt: { $gt: Date.now() }
         })
-        if(!user){
-            return res.status(400).json({success:false,message:"Invalid or expired verification token"})
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid or expired verification token" })
         }
         user.isVerified = true
         user.verificationToken = undefined
         user.verificationTokenExpiresAt = undefined
         await user.save()
-        await sendWelcomeEmail(user.email,user.name)
-        res.status(200).json({success:true,message:"User verified successfully"})
+        await sendWelcomeEmail(user.email, user.name)
+        res.status(200).json({ success: true, message: "User verified successfully" })
 
     } catch (error) {
         console.log(error)
-        res.status(400).json({success:false,message:error.message})
+        res.status(400).json({ success: false, message: error.message })
     }
 
 }
 
-export const login = async (req, res) => { }
+export const login = async (req, res) => {
+    const { email, password } = req.body
+    try {
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "All fields are required" })
+        }
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid credentials" })
+        }
+        const isMatch = await bcryptjs.compare(password, user.password)
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: "Invalid credentials" })
+        }
+        if (!user.isVerified) {
+            return res.status(400).json({ success: false, message: "Please verify your email to login" })
+        }
+        generateTokenAndSetCookie(res, user._id)
+        user.lastLogin = new Date()
+        await user.save()
+        res.status(200).json({
+            success: true, message: "Logged in successfully",
+            user: {
+                ...user._doc,
+                password: undefined
+            }
+        })
 
-export const logout = async (req, res) => { }
+    } catch (error) {
+        console.log(error)
+        res.status(400).json({ success: false, message: error.message })
+    }
+
+}
+
+export const logout = async (req, res) => {
+    res.clearCookie('token')
+    res.status(200).json({ success: true, message: "Logged out successfully" })
+}
+
+export const forgotPassword = async (req, res) => {
+    const { email } = req.body
+    try {
+        if (!email) {
+            return res.status(400).json({ success: false, message: "provide a valid email" })
+        }
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(400).json({ success: false, message: "user not found" })
+        }
+
+        const resetToken = crypto.randomBytes(20).toString('hex')
+        const resetPasswordToken = resetToken
+        const resetPasswordExpiresAt = Date.now() + 1 * 60 * 60 * 1000
+
+        user.resetPasswordToken = resetPasswordToken
+        user.resetPasswordExpiresAt = resetPasswordExpiresAt
+
+        await user.save()
+        // send email with reset token
+        await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/resetpassword/${resetToken}`)
+
+        res.status(200).json({ success: true, message: "Reset token sent to your email" })
+
+    } catch (error) {
+        console.log(error)
+        res.status(400).json({ success: false, message: error.message })
+    }
+}
 
 
 export const deleteUser = async (req, res) => {
