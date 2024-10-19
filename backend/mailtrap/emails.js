@@ -1,3 +1,4 @@
+import e from "express"
 import { VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplates.js"
 import { mailtrapClient, sender } from "./mailtrap.config.js"
 
@@ -19,4 +20,25 @@ export const sendVerificationEmail = async (email,verificationToken) => {
         throw new Error(`Email could not be sent, ${error}`)
     }
 
+}
+
+export const sendWelcomeEmail = async (email,name) => {
+    const recipient = [{email}]
+
+    try {
+        const response = await mailtrapClient.send({
+            from:sender,
+            to:recipient,
+            template_uuid:"6fdf14ce-b52f-4de6-8ba4-b0ece9560ff9",
+            template_variables:{    
+                "company_info_name": "Auth company",
+                "name": name
+            },
+        })
+        console.log(" welcome Email sent successfully",response);
+        
+    } catch (error) {
+        console.log(error)
+        throw new Error(`Email could not be sent, ${error}`)
+    }
 }
