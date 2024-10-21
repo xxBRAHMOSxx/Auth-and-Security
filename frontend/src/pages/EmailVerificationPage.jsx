@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../store/authStore'
+import toast from 'react-hot-toast'
 
 const EmailVerificationPage = () => {
     const [code, setCode] = useState(["", "", "", "", "", ""])
@@ -89,6 +90,7 @@ const EmailVerificationPage = () => {
                             />
                         ))}
                     </div>
+                    {error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
