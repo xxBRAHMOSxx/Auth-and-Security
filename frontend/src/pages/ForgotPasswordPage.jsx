@@ -8,8 +8,9 @@ import { Link } from "react-router-dom";
 const ForgotPasswordPage = () => {
 	const [email, setEmail] = useState("");
 	const [isSubmitted, setIsSubmitted] = useState(false);
+	
 
-	const { isLoading, forgotPassword } = useAuthStore();
+	const { error, isLoading, forgotPassword } = useAuthStore();
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -50,6 +51,7 @@ const ForgotPasswordPage = () => {
 						>
 							{isLoading ? <Loader className='size-6 animate-spin mx-auto' /> : "Send Reset Link"}
 						</motion.button>
+						{error && <p className='text-red-500 text-sm mt-2 text-center'>{error}</p>}
 					</form>
 				) : (
 					<div className='text-center'>

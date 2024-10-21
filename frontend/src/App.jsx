@@ -10,6 +10,7 @@ import DashBoardPage from "./pages/DashBoardPage"
 import { useEffect } from "react"
 import LoadingSpinner from "./components/LoadingSpinner"
 import ForgotPasswordPage from "./pages/ForgotPasswordPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
 
 // protect routes that require authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -60,6 +61,7 @@ function App() {
           <Route path='/login' element={<RedirectAuthenticatedUser><LoginPage /></RedirectAuthenticatedUser>} />
           <Route path='/verifyEmail' element={<EmailVerificationPage />} />
           <Route path='/forgotPassword' element={<RedirectAuthenticatedUser><ForgotPasswordPage/></RedirectAuthenticatedUser>} />
+          <Route path='/resetPassword/:token' element={<RedirectAuthenticatedUser><ResetPasswordPage/></RedirectAuthenticatedUser>} />
         </Routes>
         <Toaster />
       </h1>
